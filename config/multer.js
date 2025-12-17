@@ -1,25 +1,17 @@
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const multer = require("multer");
 
-const UPLOAD_DIR = process.env.UPLOAD_DIR || '/var/www/cms_uploads';
-
-// Ensure folder exists
-if (!fs.existsSync(UPLOAD_DIR)) {
-  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, UPLOAD_DIR);
+const upload = multer({
+  storage: multer.memoryStorage(), // <-- IMPORTANT
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB per image
   },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
-    cb(null, uniqueSuffix + ext);
-  }
+  fileFilter: (req, file, cb) => {
+    // Allow only images
+    if (!file.mimetype.startsWith("image/")) {
+      return cb(new Error("Only image files are allowed"), false);
+    }
+    cb(null, true);
+  },
 });
 
-const upload = multer({ storage });
-
-module.exports = { upload, UPLOAD_DIR };
+module.exports = upload;
