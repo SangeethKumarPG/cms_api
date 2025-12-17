@@ -1,7 +1,8 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
-
+const Site = require("../models/Site");
+const db = require("../config/db");
 const COOKIE_NAME = process.env.COOKIE_NAME || "token";
 
 /* ----------------------------------------
@@ -20,22 +21,56 @@ exports.login = async (req, res) => {
     return res.status(400).json({ message: "Invalid credentials" });
   }
 
+  // 🔹 1. Try to get site via user_site_access
+  const [rows] = await db.query(
+    `
+    SELECT s.id, s.sitename, usa.role
+    FROM user_site_access usa
+    JOIN sites s ON s.id = usa.site_id
+    WHERE usa.user_id = ?
+    LIMIT 1
+    `,
+    [user.id]
+  );
+
+  // 🔹 2. Fallback: get default site if no mapping exists
+  let site = rows[0];
+  if (!site) {
+    site = await Site.findDefaultSite(); // id + sitename
+  }
+
   const token = jwt.sign(
-    { id: user.id, username: user.username },
+    {
+      id: user.id,
+      username: user.username,
+      siteId: site?.id || null,
+    },
     process.env.JWT_SECRET,
     { expiresIn: "2h" }
   );
 
   res.cookie(COOKIE_NAME, token, {
     httpOnly: true,
-    secure: true,      // REQUIRED (API is HTTPS)
-    sameSite: "none",  // REQUIRED (cross-origin)
-    maxAge: 2 * 60 * 60 * 1000, // 2 hours
+    secure: true,
+    sameSite: "none",
+    maxAge: 2 * 60 * 60 * 1000,
   });
 
-  res.json({ message: "Login successful" });
+  res.json({
+    message: "Login successful",
+    user: {
+      id: user.id,
+      username: user.username,
+      site: site
+        ? {
+            id: site.id,
+            sitename: site.sitename,
+            role: site.role || "admin",
+          }
+        : null,
+    },
+  });
 };
-
 /* ----------------------------------------
    SIGNUP
 ---------------------------------------- */
