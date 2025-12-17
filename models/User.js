@@ -20,6 +20,14 @@ class User {
       username
     };
   }
+  static async findById(id) {
+    const [rows] = await db.query(
+      "SELECT * FROM users WHERE id = ?",
+      [id]
+    );
+    return rows[0];
+  }
+
 }
 
 module.exports = User;
