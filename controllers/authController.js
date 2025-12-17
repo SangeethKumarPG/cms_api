@@ -20,37 +20,21 @@ exports.login = async (req, res) => {
     return res.status(400).json({ message: "Invalid credentials" });
   }
 
-  // 🔹 Fetch site info for this user
-  const site = await Site.findByUserId(user.id); // <-- adapt if needed
-
   const token = jwt.sign(
-    {
-      id: user.id,
-      username: user.username,
-      siteName: site?.sitename, // optional, useful later
-    },
+    { id: user.id, username: user.username },
     process.env.JWT_SECRET,
     { expiresIn: "2h" }
   );
 
   res.cookie(COOKIE_NAME, token, {
     httpOnly: true,
-    secure: true,
-    sameSite: "none",
-    maxAge: 2 * 60 * 60 * 1000,
+    secure: true,      // REQUIRED (API is HTTPS)
+    sameSite: "none",  // REQUIRED (cross-origin)
+    maxAge: 2 * 60 * 60 * 1000, // 2 hours
   });
 
-  // 🔹 Send site name in response body
-  res.json({
-    message: "Login successful",
-    user: {
-      id: user.id,
-      username: user.username,
-      siteName: site?.sitename || null,
-    },
-  });
+  res.json({ message: "Login successful" });
 };
-
 
 /* ----------------------------------------
    SIGNUP
