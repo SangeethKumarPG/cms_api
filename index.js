@@ -13,8 +13,9 @@ const userSiteRoutes = require("./routes/userSiteRoutes");
 const app = express();
 
 const allowedOrigins = [
-  "http://localhost:3000",
+  // "http://localhost:3000",
   "https://cms.spensol.com",
+  "https://bwdemo.spensol.com"
 ];
 
 app.use(
