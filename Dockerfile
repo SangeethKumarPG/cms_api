@@ -3,7 +3,7 @@ FROM node:24-alpine AS builder
 
 WORKDIR /app
 
-# Prevent npm from running lifecycle scripts (supply-chain protection)
+# Prevent npm lifecycle scripts (supply-chain protection)
 ENV NPM_CONFIG_IGNORE_SCRIPTS=true
 
 COPY package.json package-lock.json* ./
@@ -19,16 +19,21 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
 WORKDIR /app
 
-# Copy only what is required to run
+# Copy runtime dependencies
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
+
+# Copy application runtime code (SAFE directories only)
 COPY --from=builder /app/index.js ./index.js
-# If you have more runtime files, explicitly list them
+COPY --from=builder /app/routes ./routes
+COPY --from=builder /app/controllers ./controllers
+COPY --from=builder /app/middleware ./middleware
+COPY --from=builder /app/utils ./utils
+COPY --from=builder /app/config ./config
 
 # Drop privileges
 USER appuser
 
-# Security & performance
 ENV NODE_ENV=production
 ENV TZ=UTC
 
