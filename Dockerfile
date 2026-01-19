@@ -1,18 +1,37 @@
-FROM node:24-alpine
+# ---------- Build stage ----------
+FROM node:24-alpine AS builder
 
 WORKDIR /app
 
-# Copy dependency files first
+# Prevent npm from running lifecycle scripts (supply-chain protection)
+ENV NPM_CONFIG_IGNORE_SCRIPTS=true
+
 COPY package.json package-lock.json* ./
+RUN npm ci --omit=dev --no-audit --no-fund
 
-# Install only production deps
-RUN npm install --omit=dev
-
-# Copy app source
 COPY . .
 
-# Expose the backend port
+# ---------- Runtime stage ----------
+FROM node:24-alpine
+
+# Create non-root user
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+WORKDIR /app
+
+# Copy only what is required to run
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/index.js ./index.js
+# If you have more runtime files, explicitly list them
+
+# Drop privileges
+USER appuser
+
+# Security & performance
+ENV NODE_ENV=production
+ENV TZ=UTC
+
 EXPOSE 3001
 
-# Start the backend
 CMD ["node", "index.js"]
