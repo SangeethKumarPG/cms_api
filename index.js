@@ -13,15 +13,14 @@ const userSiteRoutes = require("./routes/userSiteRoutes");
 const app = express();
 
 const allowedOrigins = [
-  // "http://localhost:3000",
   "https://cms.spensol.com",
-  "https://bwdemo.spensol.com"
+  "https://bwdemo.spensol.com",
 ];
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow Postman / curl / server-to-server
+      // Allow server-to-server / curl / Postman
       if (!origin) return callback(null, true);
 
       if (allowedOrigins.includes(origin)) {
@@ -31,8 +30,14 @@ app.use(
       return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type"],
   })
 );
+
+// IMPORTANT: allow preflight
+app.options("*", cors());
+
 
 app.use(express.json());
 app.use(cookieParser());
