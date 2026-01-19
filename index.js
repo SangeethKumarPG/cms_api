@@ -8,8 +8,6 @@ const siteRoutes = require("./routes/siteRoutes");
 const imageRoutes = require("./routes/imageRoutes");
 const userSiteRoutes = require("./routes/userSiteRoutes");
 
-
-
 const app = express();
 
 const allowedOrigins = [
@@ -17,27 +15,18 @@ const allowedOrigins = [
   "https://bwdemo.spensol.com",
 ];
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      // Allow server-to-server / curl / Postman
-      if (!origin) return callback(null, true);
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error("Not allowed by CORS"));
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
 
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-
-      return callback(new Error("Not allowed by CORS"));
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type"],
-  })
-);
-
-// IMPORTANT: allow preflight
-app.options("*", cors());
-
+app.use(cors(corsOptions)); // ✅ THIS HANDLES PREFLIGHT SAFELY
 
 app.use(express.json());
 app.use(cookieParser());
@@ -48,7 +37,6 @@ app.use("/sites", siteRoutes);
 app.use("/sites", imageRoutes);
 app.use("/user-site", userSiteRoutes);
 
-
-app.listen(process.env.PORT,'0.0.0.0', () => {
+app.listen(process.env.PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${process.env.PORT}`);
 });
