@@ -53,6 +53,7 @@ exports.login = async (req, res) => {
     httpOnly: true,
     secure: true,
     sameSite: "none",
+    domain: ".spensol.com",
     maxAge: 2 * 60 * 60 * 1000,
   });
 
@@ -124,6 +125,7 @@ exports.logout = (req, res) => {
       httpOnly: true,
       secure: true,
       sameSite: "none",
+      domain: ".spensol.com",
     });
 
     res.json({ message: "Logout successful" });
